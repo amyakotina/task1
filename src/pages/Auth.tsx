@@ -1,81 +1,77 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
-interface User {
-  name: string;
-  email: string;
-  password: string;
-}
+import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
+import { login } from '../store/slices/userSlice';
+import { setError } from '../store/slices/settingsSlice';
 
 const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { loading } = useAppSelector((state) => state.user);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    // Получаем список пользователей
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
     
-    // Ищем пользователя с таким email и паролем
-    const user = users.find((u: User) => u.email === email && u.password === password);
-    
-    if (user) {
-      // Сохраняем текущего пользователя
-      localStorage.setItem('currentUser', JSON.stringify({ name: user.name, email: user.email }));
-      localStorage.setItem('isAuth', 'true');
+    try {
+      await dispatch(login({ email, password })).unwrap();
       navigate('/profile');
-    } else {
-      setError('Неверный email или пароль');
+    } catch (err: any) {
+      dispatch(setError({ message: err.message || 'Неверный email или пароль', status: 401 }));
     }
   };
 
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card shadow">
+        <div className="col-md-6 col-lg-5">
+          <div className="card shadow border-0">
             <div className="card-body p-5">
-              <h2 className="text-center mb-4">Вход в аккаунт</h2>
-              
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
+              <div className="text-center mb-4">
+                <div className="display-1">🔐</div>
+                <h2 className="mt-2">Вход в аккаунт</h2>
+                <p className="text-muted">Добро пожаловать обратно!</p>
+              </div>
               
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
                   <input
                     type="email"
-                    className="form-control"
+                    className="form-control form-control-lg"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Введите ваш email"
                     required
                   />
                 </div>
                 
-                <div className="mb-3">
+                <div className="mb-4">
                   <label className="form-label">Пароль</label>
                   <input
                     type="password"
-                    className="form-control"
+                    className="form-control form-control-lg"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Введите пароль"
                     required
                   />
                 </div>
                 
-                <button type="submit" className="btn btn-primary w-100 mb-3">
-                  Войти
+                <button 
+                  type="submit" 
+                  className="btn btn-primary btn-lg w-100 mb-3"
+                  disabled={loading}
+                >
+                  {loading ? 'Вход...' : 'Войти'}
                 </button>
                 
                 <p className="text-center mb-0">
-                  Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
+                  Нет аккаунта?{' '}
+                  <Link to="/register" className="text-decoration-none">
+                    Зарегистрироваться
+                  </Link>
                 </p>
               </form>
             </div>

@@ -1,6 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Provider } from 'react-redux';
+import { store } from './store';
+
+// Components
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
+import AuthWrapper from './components/AuthWrapper';
+import CommonWrapper from './components/CommonWrapper';
 
 // Pages
 import Landing from './pages/Landing';
@@ -13,61 +20,39 @@ import Categories from './pages/Categories';
 import Notifications from './pages/Notifications';
 import NotFound from './pages/NotFound';
 
-// Временная проверка авторизации (позже заменится на Redux)
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuth = localStorage.getItem('isAuth') === 'true';
-  return isAuth ? <>{children}</> : <Navigate to="/auth" />;
-};
-
 function App() {
   return (
-    <BrowserRouter>
-      <div>
-        <Routes>
-          {/* Публичные страницы */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Защищенные страницы (требуют авторизации) */}
-          <Route path="/profile" element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          } />
-          
-          {/* Страница данных после авторизации */}
-          <Route path="/tasks" element={
-            <PrivateRoute>
-              <Tasks />
-            </PrivateRoute>
-          } />
-          
-          {/* 3 дополнительные уникальные страницы */}
-          <Route path="/statistics" element={
-            <PrivateRoute>
-              <Statistics />
-            </PrivateRoute>
-          } />
-          
-          <Route path="/categories" element={
-            <PrivateRoute>
-              <Categories />
-            </PrivateRoute>
-          } />
-          
-          <Route path="/notifications" element={
-            <PrivateRoute>
-              <Notifications />
-            </PrivateRoute>
-          } />
-          
-          {/* 404 */}
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <CommonWrapper>
+          <div className="d-flex flex-column min-vh-100">
+            <Header />
+            <main className="flex-grow-1">
+              <Routes>
+                {/* Публичные маршруты - код 200 */}
+                <Route path="/" element={<Landing />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Защищенные маршруты - 401 если не авторизован */}
+                <Route element={<AuthWrapper />}>
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/statistics" element={<Statistics />} />
+                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                </Route>
+                
+                {/* 404 страница */}
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </CommonWrapper>
+      </BrowserRouter>
+    </Provider>
   );
 }
 

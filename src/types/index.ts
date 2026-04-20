@@ -3,10 +3,10 @@ export interface IUser {
   id: string;
   name: string;
   email: string;
-  password?: string; // храним только для API
   createdAt: string;
 }
 
+// Состояние авторизации
 export interface IAuthState {
   user: IUser | null;
   isAuthenticated: boolean;
@@ -16,61 +16,37 @@ export interface IAuthState {
 
 // Задача
 export interface ITask {
-  id: string;
+  id: number;
   title: string;
-  description?: string;
   status: 'todo' | 'in-progress' | 'done';
   priority: 'high' | 'medium' | 'low';
-  categoryId?: string;
-  dueDate?: string;
-  createdAt: string;
+  categoryId?: number;
   userId: string;
+  createdAt: string;
 }
 
 // Категория
 export interface ICategory {
-  id: string;
+  id: number;
   name: string;
   color: string;
   userId: string;
-  taskCount?: number;
 }
 
 // Уведомление
 export interface INotification {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  id: number;
+  type: 'info' | 'success' | 'warning';
   message: string;
+  time: string;
   read: boolean;
-  createdAt: string;
   userId: string;
-}
-
-// Статистика
-export interface IStatistics {
-  totalTasks: number;
-  completedTasks: number;
-  inProgressTasks: number;
-  todoTasks: number;
-  productivity: number;
-  tasksByDay: { day: string; count: number }[];
 }
 
 // Настройки приложения
 export interface ISettingsState {
   isLoading: boolean;
-  error: {
-    message: string;
-    status: number;
-  } | null;
-  modalOpen: boolean;
-}
-
-// API ответ
-export interface IApiResponse<T> {
-  data: T;
-  message?: string;
-  status: number;
+  error: { message: string; status: number } | null;
 }
 
 // API ошибка
