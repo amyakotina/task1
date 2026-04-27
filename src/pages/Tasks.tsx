@@ -1,122 +1,96 @@
+// src/pages/Tasks.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/reduxHooks';
 import { fetchTasks, createTask, updateTask, deleteTask, patchTask } from '../store/slices/tasksSlice';
+import { fetchCategories } from '../store/slices/categoriesSlice';
+import { fetchNotifications } from '../store/slices/notificationsSlice';
+import { TaskStatus, TaskPriority } from '../types'; // 👈 ИМПОРТИРУЕМ ТИПЫ
 
 const Tasks: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.user);
   const { tasks, loading } = useAppSelector((state) => state.tasks);
+  const { categories } = useAppSelector((state) => state.categories);
   
-  const [showForm, setShowForm] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [newTaskTitle, setNewTaskTitle] = useState<string>('');
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('medium'); // 👈 TaskPriority тип
+  const [newTaskCategoryId, setNewTaskCategoryId] = useState<number | null>(null);
   
-  const hasFetched = useRef(false);
+  const hasFetched = useRef<boolean>(false);
 
   useEffect(() => {
     if (user && !hasFetched.current) {
       hasFetched.current = true;
-      console.log('GET /api/tasks - запрос на получение задач (1 раз)');
-      dispatch(fetchTasks(user.email));
+      dispatch(fetchTasks());
+      dispatch(fetchCategories());
+      dispatch(fetchNotifications());
     }
-  }, [dispatch, user]); 
+  }, [dispatch, user]);
 
-  // POST запрос - создание задачи
-  const handleCreateTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !newTaskTitle.trim()) return;
+  // src/pages/Tasks.tsx (фрагмент)
 
-    console.log(`POST /api/tasks - создание задачи "${newTaskTitle}"`);
-    
-    await dispatch(createTask({
-      task: {
-        title: newTaskTitle,
-        status: 'todo',
-        priority: newTaskPriority,
-        userId: user.email,
-      },
-      userEmail: user.email,
-    })).unwrap();
+const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  e.preventDefault();
+  if (!user || !newTaskTitle.trim()) return;
+  
+  await dispatch(createTask({
+    title: newTaskTitle,
+    priority: newTaskPriority,
+    categoryId: newTaskCategoryId || undefined
+  })).unwrap();
 
-    setNewTaskTitle('');
-    setNewTaskPriority('medium');
-    setShowForm(false);
+  setNewTaskTitle('');
+  setNewTaskPriority('medium');
+  setNewTaskCategoryId(null);
+  setShowForm(false);
+  // ❌ УБИРАЕМ - createTask.fulfilled уже обновляет store
+  // dispatch(fetchTasks()); 
+};
+
+// Аналогично для других операций:
+const handleStatusChange = async (taskId: number, currentStatus: TaskStatus): Promise<void> => {
+  let newStatus: TaskStatus;
+  if (currentStatus === 'todo') newStatus = 'in-progress';
+  else if (currentStatus === 'in-progress') newStatus = 'done';
+  else newStatus = 'todo';
+
+  await dispatch(updateTask({ taskId, status: newStatus })).unwrap();
+  // ❌ УБИРАЕМ - updateTask.fulfilled уже обновляет store
+  // dispatch(fetchTasks());
+};
+
+  // 👇 ИСПРАВЛЕНО: используем TaskPriority
+  const handlePriorityChange = async (taskId: number, newPriority: TaskPriority): Promise<void> => {
+    await dispatch(patchTask({ taskId, priority: newPriority })).unwrap();
+    dispatch(fetchTasks());
   };
 
-  // PUT запрос - обновление статуса задачи
-  const handleStatusChange = async (taskId: number, currentStatus: string) => {
-    if (!user) return;
-
-    // Находим текущую задачу
-    const currentTask = tasks.find(t => t.id === taskId);
-    if (!currentTask) return;
-
-    let newStatus: 'todo' | 'in-progress' | 'done';
-    if (currentStatus === 'todo') newStatus = 'in-progress';
-    else if (currentStatus === 'in-progress') newStatus = 'done';
-    else newStatus = 'todo';
-
-    // PUT - отправляем ВСЕ поля задачи (полное обновление)
-    const fullUpdatedTask = {
-      ...currentTask,      // берем все текущие поля
-      status: newStatus    // меняем только статус
-    };
-
-    console.log(`PUT /api/tasks/${taskId}`);
-    
-    await dispatch(updateTask({
-      taskId,
-      fullTask: fullUpdatedTask,  // отправляем ВЕСЬ объект
-      userEmail: user.email,
-    })).unwrap();
-  };
-  // PATCH запрос - частичное обновление приоритета
-  const handlePriorityChange = async (taskId: number, newPriority: 'high' | 'medium' | 'low') => {
-    if (!user) return;
-
-    console.log(`PATCH /api/tasks/${taskId}`, { priority: newPriority });
-    
-    // PATCH - отправляем ТОЛЬКО изменяемое поле
-    await dispatch(patchTask({
-      taskId,
-      updates: { priority: newPriority },  // ТОЛЬКО приоритет
-      userEmail: user.email,
-    })).unwrap();
-  };
-
-
-  // DELETE запрос - удаление задачи
-  const handleDeleteTask = async (taskId: number) => {
-    if (!user) return;
+  const handleDeleteTask = async (taskId: number): Promise<void> => {
     if (!window.confirm('Вы уверены, что хотите удалить задачу?')) return;
-
-    console.log(`DELETE /api/tasks/${taskId} - удаление задачи`);
-    
-    await dispatch(deleteTask({
-      taskId,
-      userEmail: user.email,
-    })).unwrap();
+    await dispatch(deleteTask(taskId)).unwrap();
+    dispatch(fetchTasks());
   };
 
-  const getStatusBadge = (status: string) => {
-    const badges: Record<string, { class: string; text: string }> = {
-      'todo': { class: 'bg-secondary', text: 'К выполнению' },
-      'in-progress': { class: 'bg-primary', text: 'В процессе' },
-      'done': { class: 'bg-success', text: 'Готово' }
+  const getStatusBadge = (status: TaskStatus): { class: string; text: string } => {
+    const badges: Record<TaskStatus, { class: string; text: string }> = {
+      'todo': { class: 'bg-secondary', text: '📋 К выполнению' },
+      'in-progress': { class: 'bg-primary', text: '🔄 В процессе' },
+      'done': { class: 'bg-success', text: '✅ Готово' }
     };
-    return badges[status] || badges.todo;
+    return badges[status];
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const badges: Record<string, { class: string; text: string }> = {
-      'high': { class: 'bg-danger', text: 'Высокий' },
-      'medium': { class: 'bg-warning', text: 'Средний' },
-      'low': { class: 'bg-info', text: 'Низкий' }
+  const getPriorityBadge = (priority: TaskPriority): { class: string; text: string } => {
+    const badges: Record<TaskPriority, { class: string; text: string }> = {
+      'high': { class: 'bg-danger', text: '🔴 Высокий' },
+      'medium': { class: 'bg-warning', text: '🟡 Средний' },
+      'low': { class: 'bg-info', text: '🟢 Низкий' }
     };
-    return badges[priority] || badges.medium;
+    return badges[priority];
   };
 
-  if (loading) {
+  if (loading && tasks.length === 0) {
     return (
       <div className="container mt-5 text-center">
         <div className="spinner-border text-primary" role="status">
@@ -130,48 +104,65 @@ const Tasks: React.FC = () => {
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Мои задачи</h2>
+        <h2>✨ Мои задачи</h2>
         <button 
-          className="btn btn-primary" 
+          className="btn btn-primary btn-lg px-4"
           onClick={() => setShowForm(!showForm)}
+          style={{ borderRadius: '12px', fontWeight: 'bold' }}
         >
           {showForm ? '✖ Отмена' : '+ Новая задача'}
         </button>
       </div>
 
-      {/* Форма создания задачи - POST запрос */}
       {showForm && (
-        <div className="card mb-4 shadow-sm">
-          <div className="card-body">
-            <h5 className="card-title mb-3">➕ Создание новой задачи</h5>
+        <div className="card mb-4 shadow-lg border-0" style={{ borderRadius: '20px' }}>
+          <div className="card-body p-4">
+            <h5 className="card-title mb-3" style={{ fontSize: '1.5rem' }}>✨ Создание новой задачи</h5>
             <form onSubmit={handleCreateTask}>
               <div className="mb-3">
-                <label className="form-label">Название задачи</label>
+                <label className="form-label fw-bold">Название задачи</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control form-control-lg"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Введите название задачи"
+                  placeholder="Например: Изучить React"
                   required
                   autoFocus
+                  style={{ borderRadius: '12px' }}
                 />
               </div>
               
               <div className="mb-3">
-                <label className="form-label">Приоритет</label>
+                <label className="form-label fw-bold">Приоритет</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-lg"
                   value={newTaskPriority}
-                  onChange={(e) => setNewTaskPriority(e.target.value as any)}
+                  onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority)}
+                  style={{ borderRadius: '12px' }}
                 >
                   <option value="low">🟢 Низкий</option>
                   <option value="medium">🟡 Средний</option>
                   <option value="high">🔴 Высокий</option>
                 </select>
               </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-bold">Категория (опционально)</label>
+                <select
+                  className="form-select form-select-lg"
+                  value={newTaskCategoryId || ''}
+                  onChange={(e) => setNewTaskCategoryId(e.target.value ? Number(e.target.value) : null)}
+                  style={{ borderRadius: '12px' }}
+                >
+                  <option value="">Без категории</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
               
-              <button type="submit" className="btn btn-success">
+              <button type="submit" className="btn btn-success btn-lg px-5" style={{ borderRadius: '12px' }}>
                 ✅ Создать задачу
               </button>
             </form>
@@ -179,13 +170,12 @@ const Tasks: React.FC = () => {
         </div>
       )}
 
-      {/* Список задач */}
       {tasks.length === 0 ? (
         <div className="text-center py-5">
           <div className="display-1 mb-3">📋</div>
-          <h3>У вас пока нет задач</h3>
-          <p className="text-muted">Создайте свою первую задачу</p>
-          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+          <h3 className="mb-3">У вас пока нет задач</h3>
+          <p className="text-muted mb-4">Создайте свою первую задачу и начните управлять временем</p>
+          <button className="btn btn-primary btn-lg px-5" onClick={() => setShowForm(true)} style={{ borderRadius: '12px' }}>
             + Создать задачу
           </button>
         </div>
@@ -194,73 +184,82 @@ const Tasks: React.FC = () => {
           {tasks.map((task) => {
             const status = getStatusBadge(task.status);
             const priority = getPriorityBadge(task.priority);
+            const category = categories.find(c => c.id === task.categoryId);
             
             return (
-              <div key={task.id} className="col-md-6 mb-3">
-                <div className="card h-100 shadow-sm">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h5 className="card-title mb-0">{task.title}</h5>
-                      <div className="dropdown">
-                        <button 
-                          className="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                          type="button"
-                          data-bs-toggle="dropdown"
-                        >
-                          {priority.text}
-                        </button>
-                        <ul className="dropdown-menu">
-                          <li>
-                            <button 
-                              className="dropdown-item" 
-                              onClick={() => handlePriorityChange(task.id, 'low')}
-                            >
-                              🟢 Низкий
-                            </button>
-                          </li>
-                          <li>
-                            <button 
-                              className="dropdown-item" 
-                              onClick={() => handlePriorityChange(task.id, 'medium')}
-                            >
-                              🟡 Средний
-                            </button>
-                          </li>
-                          <li>
-                            <button 
-                              className="dropdown-item" 
-                              onClick={() => handlePriorityChange(task.id, 'high')}
-                            >
-                              🔴 Высокий
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
+              <div key={task.id} className="col-md-6 col-lg-4 mb-4">
+                <div className="card h-100 shadow-sm border-0" style={{ borderRadius: '16px', transition: 'transform 0.2s' }}>
+                  <div className="card-body p-4">
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <h5 className="card-title mb-0 fw-bold" style={{ fontSize: '1.2rem' }}>{task.title}</h5>
+                      <span className={`badge ${priority.class} px-3 py-2`} style={{ fontSize: '0.8rem', borderRadius: '20px' }}>
+                        {priority.text}
+                      </span>
                     </div>
                     
-                    <div className="mt-3 d-flex justify-content-between align-items-center">
-                      {/* PUT запрос - изменение статуса */}
+                    {category && (
+                      <div className="mb-2">
+                        <span 
+                          className="badge px-2 py-1" 
+                          style={{ backgroundColor: category.color, color: 'white', borderRadius: '8px' }}
+                        >
+                          📁 {category.name}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="mt-3">
                       <button
-                        className={`btn btn-sm ${status.class} text-white`}
+                        className={`btn ${status.class} text-white w-100 mb-2`}
                         onClick={() => handleStatusChange(task.id, task.status)}
+                        style={{ borderRadius: '10px', padding: '8px' }}
                         title="Изменить статус"
                       >
                         {status.text}
                       </button>
                       
-                      {/* DELETE запрос - удаление */}
+                      <div className="d-flex gap-2 mb-2">
+                        <button
+                          className="btn btn-outline-danger flex-grow-1"
+                          onClick={() => handlePriorityChange(task.id, 'high')}
+                          style={{ borderRadius: '10px' }}
+                          title="Высокий приоритет"
+                        >
+                          🔴 Высокий
+                        </button>
+                        <button
+                          className="btn btn-outline-warning flex-grow-1"
+                          onClick={() => handlePriorityChange(task.id, 'medium')}
+                          style={{ borderRadius: '10px' }}
+                          title="Средний приоритет"
+                        >
+                          🟡 Средний
+                        </button>
+                        <button
+                          className="btn btn-outline-info flex-grow-1"
+                          onClick={() => handlePriorityChange(task.id, 'low')}
+                          style={{ borderRadius: '10px' }}
+                          title="Низкий приоритет"
+                        >
+                          🟢 Низкий
+                        </button>
+                      </div>
+                      
                       <button
-                        className="btn btn-sm btn-outline-danger"
+                        className="btn btn-outline-danger w-100"
                         onClick={() => handleDeleteTask(task.id)}
+                        style={{ borderRadius: '10px' }}
                         title="Удалить задачу"
                       >
                         🗑️ Удалить
                       </button>
                     </div>
                     
-                    <div className="mt-2">
+                    <div className="mt-3 text-center">
                       <small className="text-muted">
-                        Создана: {new Date(task.createdAt).toLocaleDateString()}
+                        {task.status === 'todo' && '⏳ Ожидает выполнения'}
+                        {task.status === 'in-progress' && '⚡ В работе'}
+                        {task.status === 'done' && '🎉 Выполнено!'}
                       </small>
                     </div>
                   </div>
@@ -268,28 +267,6 @@ const Tasks: React.FC = () => {
               </div>
             );
           })}
-        </div>
-      )}
-      
-      {/* Статистика */}
-      {tasks.length > 0 && (
-        <div className="row mt-4">
-          <div className="col-12">
-            <div className="card bg-light">
-              <div className="card-body">
-                <h6 className="mb-2">📊 Статистика:</h6>
-                <div className="d-flex gap-3">
-                  <span>Всего: {tasks.length}</span>
-                  <span className="text-success">
-                    ✓ Выполнено: {tasks.filter(t => t.status === 'done').length}
-                  </span>
-                  <span className="text-primary">
-                    ⟳ В процессе: {tasks.filter(t => t.status === 'in-progress').length}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

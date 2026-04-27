@@ -1,3 +1,4 @@
+// src/pages/Register.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
@@ -28,24 +29,12 @@ const Register: React.FC = () => {
     
     try {
       await dispatch(register({ name, email, password })).unwrap();
-      
-      // Инициализируем данные для нового пользователя
-      const tasks = JSON.parse(localStorage.getItem('tasks') || '{}');
-      const categories = JSON.parse(localStorage.getItem('categories') || '{}');
-      const notifications = JSON.parse(localStorage.getItem('notifications') || '{}');
-      
-      tasks[email] = [];
-      categories[email] = [];
-      notifications[email] = [];
-      
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-      localStorage.setItem('categories', JSON.stringify(categories));
-      localStorage.setItem('notifications', JSON.stringify(notifications));
-      localStorage.setItem('currentUser', JSON.stringify({ name, email }));
-      
       navigate('/profile');
-    } catch (err: any) {
-      dispatch(setError({ message: err.message || 'Ошибка регистрации', status: 409 }));
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err 
+        ? String(err.message) 
+        : 'Ошибка регистрации';
+      dispatch(setError({ message: errorMessage, status: 409 }));
     }
   };
 

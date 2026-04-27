@@ -11,14 +11,18 @@ const Auth: React.FC = () => {
   const navigate = useNavigate();
   const { loading } = useAppSelector((state) => state.user);
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       await dispatch(login({ email, password })).unwrap();
       navigate('/profile');
-    } catch (err: any) {
-      dispatch(setError({ message: err.message || 'Неверный email или пароль', status: 401 }));
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err 
+        ? String(err.message) 
+        : 'Неверный email или пароль';
+      dispatch(setError({ message: errorMessage, status: 401 }));
     }
   };
 
