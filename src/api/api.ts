@@ -1,4 +1,3 @@
-// src/api/api.ts
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import { IApiError } from '../types';
 
@@ -11,7 +10,7 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Типизированный интерцептор запроса
+// Типизированный интерсептор запроса
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token: string | null = localStorage.getItem('token');
@@ -22,7 +21,7 @@ api.interceptors.request.use(
   }
 );
 
-// Типизированный интерцептор ответа
+// Типизированный инсерцептор ответа
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string }>): Promise<IApiError> => {

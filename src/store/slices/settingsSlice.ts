@@ -1,4 +1,3 @@
-// src/store/slices/settingsSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ISettingsState, IApiError } from '../../types';
 
@@ -27,7 +26,6 @@ const settingsSlice = createSlice({
       console.log(`🔔 Уведомление: ${action.payload}`);
     },
     hideNotification: (state) => {
-      // логика скрытия
     },
   },
 });

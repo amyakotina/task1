@@ -1,4 +1,3 @@
-// src/pages/Notifications.tsx
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { fetchNotifications, markAsRead, markAllAsRead, deleteNotification } from '../store/slices/notificationsSlice';

@@ -1,36 +1,34 @@
-// src/store/slices/tasksSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../api/api';
 import { 
   ITask, 
-  TaskStatus, 
   TaskPriority, 
   ICreateTaskPayload, 
   IUpdateTaskPayload, 
   IPatchTaskPayload,
   IApiError,
   RootState
-} from '../../types';  // 👈 ДОБАВЛЯЕМ RootState и IApiError
+} from '../../types';
 import { setLoading, setError } from './settingsSlice';
 import { addLocalNotification } from './notificationsSlice';
 
-interface TasksState {
-  tasks: ITask[];
-  loading: boolean;
+interface TasksState {//Тип состояния слайса. Хранит список задач и флаг, идёт ли загрузка конкретно задач.
+  tasks: ITask[];//Массив задач
+  loading: boolean;//Флаг загрузки задач
 }
 
-interface IFetchTasksResponse {
+interface IFetchTasksResponse {//Тип ответа от сервера при запросе задач
   status: number;
   tasks: ITask[];
 }
 
-interface ITaskResponse {
+interface ITaskResponse {//Тип ответа от сервера при создании или обновлении задачи
   status: number;
   message: string;
   task: ITask;
 }
 
-const initialState: TasksState = {
+const initialState: TasksState = {//Начальное состояние слайса
   tasks: [],
   loading: false,
 };
@@ -43,6 +41,12 @@ export const fetchTasks = createAsyncThunk<
 >(
   'tasks/fetchTasks',
   async (_, { dispatch, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('Нет токена, пропускаем fetchTasks');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     dispatch(setLoading(true));
     try {
       const response = await api.get<IFetchTasksResponse>('/tasks');
@@ -66,6 +70,12 @@ export const createTask = createAsyncThunk<
 >(
   'tasks/createTask',
   async ({ title, priority, categoryId }, { dispatch, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('Нет токена, пропускаем createTask');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     dispatch(setLoading(true));
     try {
       const response = await api.post<ITaskResponse>('/tasks', { title, priority, categoryId });
@@ -95,6 +105,12 @@ export const updateTask = createAsyncThunk<
 >(
   'tasks/updateTask',
   async ({ taskId, status }, { dispatch, getState, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('Нет токена, пропускаем updateTask');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     dispatch(setLoading(true));
     try {
       const state = getState();
@@ -132,6 +148,12 @@ export const patchTask = createAsyncThunk<
 >(
   'tasks/patchTask',
   async ({ taskId, priority }, { dispatch, getState, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('Нет токена, пропускаем patchTask');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     dispatch(setLoading(true));
     try {
       const state = getState();
@@ -170,6 +192,12 @@ export const deleteTask = createAsyncThunk<
 >(
   'tasks/deleteTask',
   async (taskId, { dispatch, getState, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем deleteTask');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     dispatch(setLoading(true));
     try {
       const state = getState();

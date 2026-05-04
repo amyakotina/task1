@@ -1,26 +1,26 @@
-// src/pages/Statistics.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { fetchTasks } from '../store/slices/tasksSlice';
-import { TaskStatus } from '../types'; // 👈 ИМПОРТИРУЕМ ТИП
+import { TaskStatus } from '../types';
 
 const Statistics: React.FC = () => {
   const dispatch = useAppDispatch();
   const { tasks } = useAppSelector((state) => state.tasks);
-  const { userStats } = useAppSelector((state) => state.user);
+  const hasFetched = useRef<boolean>(false);
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+    if (!hasFetched.current && tasks.length === 0) {
+      hasFetched.current = true;
+      dispatch(fetchTasks());
+    }
+  }, [dispatch, tasks.length]);
 
-  // Статистика по статусам - используем Record с TaskStatus
   const statusStats: Record<TaskStatus, number> = {
     todo: tasks.filter(t => t.status === 'todo').length,
     'in-progress': tasks.filter(t => t.status === 'in-progress').length,
     done: tasks.filter(t => t.status === 'done').length,
   };
 
-  // Процент выполнения
   const completionRate: number = tasks.length > 0 
     ? Math.round((statusStats.done / tasks.length) * 100) 
     : 0;

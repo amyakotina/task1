@@ -1,7 +1,6 @@
-// src/store/slices/categoriesSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../api/api';
-import { ICategory, ICreateCategoryPayload, IUpdateCategoryPayload, IApiError, RootState } from '../../types'; // 👈 ДОБАВЛЯЕМ
+import { ICategory, ICreateCategoryPayload, IUpdateCategoryPayload, IApiError, RootState } from '../../types';
 import { addLocalNotification } from './notificationsSlice';
 
 interface CategoriesState {
@@ -33,6 +32,12 @@ export const fetchCategories = createAsyncThunk<
 >(
   'categories/fetchCategories',
   async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем fetchCategories');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       const response = await api.get<IFetchCategoriesResponse>('/categories');
       console.log(`📁 Получено ${response.data.categories.length} категорий`);
@@ -51,6 +56,12 @@ export const createCategory = createAsyncThunk<
 >(
   'categories/createCategory',
   async ({ name, color }, { dispatch, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем createCategory');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       const response = await api.post<ICategoryResponse>('/categories', { name, color });
       console.log(`✅ Категория "${name}" создана`);
@@ -75,6 +86,12 @@ export const updateCategory = createAsyncThunk<
 >(
   'categories/updateCategory',
   async ({ categoryId, name, color }, { dispatch, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем updateCategory');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       const response = await api.put<ICategoryResponse>(`/categories/${categoryId}`, { name, color });
       console.log(`✏️ Категория обновлена`);
@@ -99,6 +116,12 @@ export const deleteCategory = createAsyncThunk<
 >(
   'categories/deleteCategory',
   async (categoryId, { dispatch, getState, rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем deleteCategory');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       const state = getState();
       const category = state.categories.categories.find((c: ICategory) => c.id === categoryId);

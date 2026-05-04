@@ -1,4 +1,3 @@
-// src/components/Layout/Header.tsx
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
@@ -20,7 +19,7 @@ const Header: React.FC = () => {
             dispatch(fetchNotifications()).unwrap()
           ]);
         } catch (err) {
-          // ✅ Просто логируем ошибку, не показываем пользователю
+          // Просто логируем ошибку, не показываем пользователю
           const errorMsg = err && typeof err === 'object' && 'message' in err 
             ? String(err.message) 
             : 'Ошибка загрузки данных';
@@ -71,7 +70,7 @@ const Header: React.FC = () => {
             {isAuthenticated ? (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/tasks">📋 Задачи</Link>
+                  <Link className="nav-link" to="/tasks"> 📋 Задачи</Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/categories">🏷️ Категории</Link>

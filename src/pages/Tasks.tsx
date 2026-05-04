@@ -1,10 +1,9 @@
-// src/pages/Tasks.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/reduxHooks';
 import { fetchTasks, createTask, updateTask, deleteTask, patchTask } from '../store/slices/tasksSlice';
 import { fetchCategories } from '../store/slices/categoriesSlice';
 import { fetchNotifications } from '../store/slices/notificationsSlice';
-import { TaskStatus, TaskPriority } from '../types'; // 👈 ИМПОРТИРУЕМ ТИПЫ
+import { TaskStatus, TaskPriority } from '../types';
 
 const Tasks: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -14,7 +13,7 @@ const Tasks: React.FC = () => {
   
   const [showForm, setShowForm] = useState<boolean>(false);
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('medium'); // 👈 TaskPriority тип
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('medium');
   const [newTaskCategoryId, setNewTaskCategoryId] = useState<number | null>(null);
   
   const hasFetched = useRef<boolean>(false);
@@ -28,48 +27,38 @@ const Tasks: React.FC = () => {
     }
   }, [dispatch, user]);
 
-  // src/pages/Tasks.tsx (фрагмент)
+  const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    if (!user || !newTaskTitle.trim()) return;
+    
+    await dispatch(createTask({
+      title: newTaskTitle,
+      priority: newTaskPriority,
+      categoryId: newTaskCategoryId || undefined
+    })).unwrap();
 
-const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-  e.preventDefault();
-  if (!user || !newTaskTitle.trim()) return;
-  
-  await dispatch(createTask({
-    title: newTaskTitle,
-    priority: newTaskPriority,
-    categoryId: newTaskCategoryId || undefined
-  })).unwrap();
+    setNewTaskTitle('');
+    setNewTaskPriority('medium');
+    setNewTaskCategoryId(null);
+    setShowForm(false);
+  };
 
-  setNewTaskTitle('');
-  setNewTaskPriority('medium');
-  setNewTaskCategoryId(null);
-  setShowForm(false);
-  // ❌ УБИРАЕМ - createTask.fulfilled уже обновляет store
-  // dispatch(fetchTasks()); 
-};
+  const handleStatusChange = async (taskId: number, currentStatus: TaskStatus): Promise<void> => {
+    let newStatus: TaskStatus;
+    if (currentStatus === 'todo') newStatus = 'in-progress';
+    else if (currentStatus === 'in-progress') newStatus = 'done';
+    else newStatus = 'todo';
 
-// Аналогично для других операций:
-const handleStatusChange = async (taskId: number, currentStatus: TaskStatus): Promise<void> => {
-  let newStatus: TaskStatus;
-  if (currentStatus === 'todo') newStatus = 'in-progress';
-  else if (currentStatus === 'in-progress') newStatus = 'done';
-  else newStatus = 'todo';
+    await dispatch(updateTask({ taskId, status: newStatus })).unwrap();
+  };
 
-  await dispatch(updateTask({ taskId, status: newStatus })).unwrap();
-  // ❌ УБИРАЕМ - updateTask.fulfilled уже обновляет store
-  // dispatch(fetchTasks());
-};
-
-  // 👇 ИСПРАВЛЕНО: используем TaskPriority
   const handlePriorityChange = async (taskId: number, newPriority: TaskPriority): Promise<void> => {
     await dispatch(patchTask({ taskId, priority: newPriority })).unwrap();
-    dispatch(fetchTasks());
   };
 
   const handleDeleteTask = async (taskId: number): Promise<void> => {
     if (!window.confirm('Вы уверены, что хотите удалить задачу?')) return;
     await dispatch(deleteTask(taskId)).unwrap();
-    dispatch(fetchTasks());
   };
 
   const getStatusBadge = (status: TaskStatus): { class: string; text: string } => {

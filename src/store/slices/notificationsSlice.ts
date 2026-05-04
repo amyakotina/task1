@@ -1,7 +1,6 @@
-// src/store/slices/notificationsSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../api/api';
-import { INotification, NotificationType, IApiError } from '../../types'; // 👈 ДОБАВЛЯЕМ IApiError
+import { INotification, NotificationType, IApiError } from '../../types';
 
 interface NotificationsState {
   notifications: INotification[];
@@ -38,6 +37,12 @@ export const fetchNotifications = createAsyncThunk<
 >(
   'notifications/fetchNotifications',
   async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем fetchNotifications');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       const response = await api.get<IFetchNotificationsResponse>('/notifications');
       return response.data.notifications;
@@ -55,6 +60,12 @@ export const markAsRead = createAsyncThunk<
 >(
   'notifications/markAsRead',
   async (notificationId, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем markAsRead');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       const response = await api.patch<IMarkAsReadResponse>(`/notifications/${notificationId}`);
       return response.data.notification;
@@ -72,6 +83,12 @@ export const markAllAsRead = createAsyncThunk<
 >(
   'notifications/markAllAsRead',
   async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем markAllAsRead');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       await api.post('/notifications/mark-all-read');
       return;
@@ -89,6 +106,12 @@ export const deleteNotification = createAsyncThunk<
 >(
   'notifications/deleteNotification',
   async (notificationId, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️ Нет токена, пропускаем deleteNotification');
+      return rejectWithValue({ message: 'Не авторизован', status: 401 });
+    }
+    
     try {
       await api.delete(`/notifications/${notificationId}`);
       return notificationId;

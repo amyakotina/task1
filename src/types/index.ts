@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 // Пользователь
 export interface IUser {
   id: string;
@@ -64,7 +62,7 @@ export interface IApiResponse<T = unknown> {
   data?: T;
 }
 
-// 👇 ЭТОТ ТИП НУЖЕН ВСЕМ СЛАЙСАМ
+// 
 export interface IApiError {
   message: string;
   status: number;
@@ -76,7 +74,6 @@ export interface ISettingsState {
   error: IApiError | null;
 }
 
-// Payload типы
 export interface ICreateTaskPayload {
   title: string;
   priority: TaskPriority;
@@ -104,5 +101,4 @@ export interface IUpdateCategoryPayload {
   color?: string;
 }
 
-// RootState тип (будет определен в store)
 export type RootState = import('../store').RootState;

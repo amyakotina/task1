@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { fetchCurrentUser, logout } from '../store/slices/userSlice';
@@ -14,6 +14,7 @@ const Profile: React.FC = () => {
   const { tasks } = useAppSelector((state) => state.tasks);
   const { categories } = useAppSelector((state) => state.categories);
   const { unreadCount } = useAppSelector((state) => state.notifications);
+  const hasFetched = useRef<boolean>(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -21,11 +22,13 @@ const Profile: React.FC = () => {
       return;
     }
     
-    // Загружаем все данные пользователя
-    dispatch(fetchCurrentUser());
-    dispatch(fetchTasks());
-    dispatch(fetchCategories());
-    dispatch(fetchNotifications());
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      dispatch(fetchCurrentUser());
+      dispatch(fetchTasks());
+      dispatch(fetchCategories());
+      dispatch(fetchNotifications());
+    }
   }, [dispatch, isAuthenticated, navigate]);
 
   const handleLogout = async () => {
@@ -48,7 +51,6 @@ const Profile: React.FC = () => {
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   ).slice(0, 3);
 
-
   return (
     <div className="container mt-5">
       <div className="row">
@@ -63,7 +65,6 @@ const Profile: React.FC = () => {
       </div>
       
       <div className="row">
-        {/* Информация о пользователе */}
         <div className="col-md-4 mb-4">
           <div className="card h-100 shadow-sm border-0" style={{ borderRadius: '16px' }}>
             <div className="card-body text-center p-4">
@@ -80,7 +81,6 @@ const Profile: React.FC = () => {
           </div>
         </div>
         
-        {/* Статистика */}
         <div className="col-md-8 mb-4">
           <div className="card h-100 shadow-sm border-0" style={{ borderRadius: '16px' }}>
             <div className="card-body p-4">
@@ -115,7 +115,6 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
-      {/* Быстрые действия */}
       <div className="row mt-2">
         <div className="col-12">
           <h4 className="mb-4">⚡ Быстрые действия</h4>
@@ -179,7 +178,6 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
-      {/* Последние задачи */}
       <div className="row mt-4">
         <div className="col-12">
           <div className="card shadow-sm border-0" style={{ borderRadius: '16px' }}>
