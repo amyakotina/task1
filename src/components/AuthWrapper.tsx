@@ -36,7 +36,7 @@ const AuthWrapper: React.FC = () => {
         localStorage.removeItem('token');
       })
       .finally(() => {
-        setIsChecking(false);  // ← Проверка закончена!
+        setIsChecking(false);  
       });
   }, [dispatch, isAuthenticated, loading]);
   
@@ -50,7 +50,7 @@ const AuthWrapper: React.FC = () => {
     );
   }
   
-  // Проверка закончена — теперь можно принять решение
+  // Проверка закончена
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
