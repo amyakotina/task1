@@ -7,9 +7,8 @@ const app = express();
 const PORT = 3001;
 const SECRET_KEY = 'your-secret-key-2024';
 
-// ========== РАСШИРЕННАЯ НАСТРОЙКА CORS ==========
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'], // Добавьте порт вашего фронтенда
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'], 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
@@ -45,7 +44,6 @@ app.use((req, res, next) => {
 // Middleware
 app.use(express.json());
 
-// ========== ХРАНИЛИЩА ДАННЫХ (в памяти) ==========
 let users = []; // Массив для хранения пользователей
 let tasks = []; // Массив для хранения задач
 let categories = []; // Массив для хранения категорий
@@ -54,7 +52,7 @@ let nextTaskId = 1; // Счетчик для генерации уникальн
 let nextCategoryId = 1; // Счетчик для генерации уникальных ID категорий
 let nextNotificationId = 1; // Счетчик для генерации уникальных ID уведомлений
 
-// ========== MIDDLEWARE ДЛЯ ПРОВЕРКИ JWT ТОКЕНА ==========
+
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -75,13 +73,13 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ========== АВТОРИЗАЦИЯ (НЕ ТРЕБУЮТ ТОКЕН) ==========
+//АВТОРИЗАЦИЯ
 
 // Регистрация (POST /api/auth/register)
 app.post('/api/auth/register', async (req, res) => {
   console.log('📝 POST /api/auth/register');
-  const { name, email, password } = req.body;
-  const existingUser = users.find(u => u.email === email);
+  const { name, email, password } = req.body; //Получаем данные от фронтенда
+  const existingUser = users.find(u => u.email === email); //Проверяем, нет ли уже такого пользователя
 
   if (existingUser) {
     return res.status(409).json({ message: 'Пользователь с таким email уже существует', status: 409 });
@@ -95,9 +93,9 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ message: 'Пароль должен быть минимум 6 символов', status: 400 });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10); //Хешируем пароль
 
-  const newUser = {
+  const newUser = { //Создаём пользователя
     id: Date.now().toString(),
     name,
     email,
@@ -107,13 +105,13 @@ app.post('/api/auth/register', async (req, res) => {
 
   users.push(newUser);
 
-  const token = jwt.sign(
+  const token = jwt.sign( //Создаем токен
     { id: newUser.id, email: newUser.email },
     SECRET_KEY,
     { expiresIn: '7d' }
   );
 
-  res.status(201).json({
+  res.status(201).json({ //Отправляем токен на фронтенд
     status: 201,
     message: 'Регистрация успешна',
     user: { id: newUser.id, name: newUser.name, email: newUser.email, createdAt: newUser.createdAt },
@@ -152,7 +150,7 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
   res.status(200).json({ message: 'Выход выполнен успешно', status: 200 });
 });
 
-// ========== ПОЛЬЗОВАТЕЛИ (ТРЕБУЮТ ТОКЕН) ==========
+// ПОЛЬЗОВАТЕЛИ
 
 // Получение информации о текущем пользователе (GET /api/users/me)
 app.get('/api/users/me', authenticateToken, (req, res) => {
@@ -175,7 +173,7 @@ app.get('/api/users/me', authenticateToken, (req, res) => {
   });
 });
 
-// ========== ЗАДАЧИ (ТРЕБУЮТ ТОКЕН) ==========
+//ЗАДАЧИ
 
 // Получение всех задач пользователя (GET /api/tasks)
 app.get('/api/tasks', authenticateToken, (req, res) => {
@@ -401,7 +399,7 @@ app.delete('/api/categories/:id', authenticateToken, (req, res) => {
   res.status(204).send();
 });
 
-// ========== УВЕДОМЛЕНИЯ (ТРЕБУЮТ ТОКЕН) ==========
+//УВЕДОМЛЕНИЯ
 
 // Получение всех уведомлений пользователя (GET /api/notifications)
 app.get('/api/notifications', authenticateToken, (req, res) => {
@@ -474,7 +472,6 @@ app.use((req, res) => {
 
 // ========== ЗАПУСК СЕРВЕРА ==========
 app.listen(PORT, () => {
-  console.log(`\n🚀 Сервер запущен на http://localhost:${PORT}`);
-  console.log(`📍 API доступен по адресу: http://localhost:${PORT}/api`);
-  console.log(`🔧 CORS разрешен для: http://localhost:3000, http://localhost:5173\n`);
+  console.log(`\nервер запущен на http://localhost:${PORT}`);
+  console.log(`API доступен по адресу: http://localhost:${PORT}/api`);
 });

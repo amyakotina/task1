@@ -1,10 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
-import { fetchCurrentUser, logout } from '../store/slices/userSlice';
-import { fetchTasks } from '../store/slices/tasksSlice';
-import { fetchCategories } from '../store/slices/categoriesSlice';
-import { fetchNotifications } from '../store/slices/notificationsSlice';
+import { logout } from '../store/slices/userSlice';
 import { ITask } from '../types';
 
 const Profile: React.FC = () => {
@@ -21,13 +18,9 @@ const Profile: React.FC = () => {
       navigate('/auth');
       return;
     }
-    
     if (!hasFetched.current) {
       hasFetched.current = true;
-      dispatch(fetchCurrentUser());
-      dispatch(fetchTasks());
-      dispatch(fetchCategories());
-      dispatch(fetchNotifications());
+      // Больше ничего не вызываем
     }
   }, [dispatch, isAuthenticated, navigate]);
 

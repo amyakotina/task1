@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/reduxHooks';
 import { fetchTasks, createTask, updateTask, deleteTask, patchTask } from '../store/slices/tasksSlice';
-import { fetchCategories } from '../store/slices/categoriesSlice';
-import { fetchNotifications } from '../store/slices/notificationsSlice';
 import { TaskStatus, TaskPriority } from '../types';
 
 const Tasks: React.FC = () => {
@@ -22,8 +20,8 @@ const Tasks: React.FC = () => {
     if (user && !hasFetched.current) {
       hasFetched.current = true;
       dispatch(fetchTasks());
-      dispatch(fetchCategories());
-      dispatch(fetchNotifications());
+      // Удалены dispatch(fetchCategories()) и dispatch(fetchNotifications())
+      //因为它们 уже загружены в AuthWrapper
     }
   }, [dispatch, user]);
 

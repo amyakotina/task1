@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
-import { logout, fetchCurrentUser } from '../../store/slices/userSlice';
+import { logout } from '../../store/slices/userSlice';
 import { fetchNotifications } from '../../store/slices/notificationsSlice';
 
 const Header: React.FC = () => {
@@ -14,12 +14,9 @@ const Header: React.FC = () => {
     const loadData = async () => {
       if (isAuthenticated) {
         try {
-          await Promise.all([
-            dispatch(fetchCurrentUser()).unwrap(),
-            dispatch(fetchNotifications()).unwrap()
-          ]);
+          // Удалён dispatch(fetchCurrentUser())
+          await dispatch(fetchNotifications()).unwrap();
         } catch (err) {
-          // Просто логируем ошибку, не показываем пользователю
           const errorMsg = err && typeof err === 'object' && 'message' in err 
             ? String(err.message) 
             : 'Ошибка загрузки данных';

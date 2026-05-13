@@ -62,7 +62,6 @@ export interface IApiResponse<T = unknown> {
   data?: T;
 }
 
-// 
 export interface IApiError {
   message: string;
   status: number;
